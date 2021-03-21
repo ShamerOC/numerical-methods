@@ -1,6 +1,7 @@
 //Krzysztof Wydrzynski
 
 #include <iostream>
+#include <cmath>
 
 class FunctionManager {
 public:
@@ -12,23 +13,18 @@ public:
         this->section = new Section(a, b, f(a), f(b));
         this->usedFunctions += 2;
         this->M = M;
-        std::cout << "-------------------original----------------------\n";
-        std::cout << "a: " << a << ", b: " << b << '\n';
-        std::cout << "f(a): " << f(a) << ", f(b): " << f(b) << '\n';
-        bisection(0.3);
-        a = this->section->a;
-        b = this->section->b;
-        std::cout << "-------------------after bisection----------------------\n";
-        std::cout << "a: " << a << ", b: " << b << '\n';
-        std::cout << "f(a): " << f(a) << ", f(b): " << f(b) << '\n';
-        secant(eps);
-        a = this->section->a;
-        b = this->section->b;
-        std::cout << "-------------------after secant----------------------\n";
-        std::cout << "a: " << a << ", b: " << b << '\n';
-        std::cout << "f(a): " << f(a) << ", f(b): " << f(b) << '\n';
 
-        return a + (b - a) / 2;
+        if (sgn(section->fa) != sgn(section->fb)) bisection(0.3);
+
+        secant(eps);
+
+        a = this->section->a;
+        double fa = this->section->fa;
+        b = this->section->b;
+        double fb = this->section->fb;
+
+        if (fa < fb) return a;
+        return b;
     }
 
     FunctionManager(double (*f)(double)) {
@@ -63,12 +59,14 @@ private:
         double b = section->b;
         double fa = section->fa;
         double fb = section->fb;
-        double c = a;
-        double fc = fa;
+        double c;
+        double fc;
 
         if (sgn(fa) != sgn(fb)) {
-            while (std::abs(fa) > epsilon && std::abs(fb) > epsilon && std::abs(fc) > epsilon) {
-                c = a + (b - a) / 2;
+            double e = b - a;
+            while (std::abs(a - b) > epsilon && usedFunctions < M) {
+                e = e / 2;
+                c = a + e;
                 fc = f(c);
                 this->usedFunctions++;
                 if (sgn(fa) == sgn(fc)) {
@@ -80,12 +78,19 @@ private:
                 }
 
             }
-        } else {
-            std::cout << "Wartosci na koncach przedzialow maja takie same znaki\n";
         }
 
-        this->section->a = a;
-        this->section->b = b;
+        if (std::abs(fa) > std::abs(fb)) {
+            this->section->a = a;
+            this->section->b = b;
+            this->section->fa = fa;
+            this->section->fb = fb;
+        } else {
+            this->section->a = b;
+            this->section->b = a;
+            this->section->fa = fb;
+            this->section->fb = fa;
+        }
     }
 
     void secant(double epsilon) {
@@ -95,21 +100,14 @@ private:
         double fb = section->fb;
 
         while (usedFunctions < M && std::abs(fa) > epsilon) {
-            if (std::abs(fa) > std::abs(fb)) {
-                double temp;
-                temp = a;
-                a = b;
-                b = temp;
-                temp = fa;
-                fa = fb;
-                fb = temp;
-            }
+            double s = b - (b - a) * fb / (fb - fa);
+            if (std::isnan(s)) break;
+            double fs = f(s);
 
-            double s = (b - a) / (fb - fa);
-            b = a;
-            fb = fa;
-            a = a - (fa * s);
-            fa = f(a);
+            a = b;
+            fa = fb;
+            b = s;
+            fb = fs;
             usedFunctions++;
         }
         this->section->a = a;
