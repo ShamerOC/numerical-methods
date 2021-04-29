@@ -11,7 +11,7 @@ public:
     }
 
     double get(int n) const {
-        double a = this->A * pow(1.0/7.0, n);
+        double a = this->A * pow(1.0 / 7.0, n);
         double b = this->B * pow(7.0, n);
         return a + b;
     }
